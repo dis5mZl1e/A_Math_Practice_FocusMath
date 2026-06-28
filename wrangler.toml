@@ -1,0 +1,6 @@
+name = "focusmath-radar"
+main = "worker.js"
+compatibility_date = "2024-09-01"
+
+# 部署后访问地址形如：https://focusmath-radar.<你的子域名>.workers.dev
+# 将该地址填入 FocusMath 资源雷达设置面板的 "Serverless 后端地址" 输入框

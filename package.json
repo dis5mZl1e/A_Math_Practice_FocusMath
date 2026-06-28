@@ -1,0 +1,19 @@
+{
+  "name": "focusmath",
+  "version": "0.1.0",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js",
+    "migrate:sql": "node server.js --migrate-sql"
+  },
+  "dependencies": {
+    "html2canvas": "^1.4.1",
+    "jspdf": "^2.5.1",
+    "jszip": "^3.10.1",
+    "katex": "^0.16.9",
+    "mysql2": "^3.11.5",
+    "sql.js": "^1.8.0",
+    "vis-network": "^9.1.9"
+  }
+}

@@ -1,0 +1,51 @@
+# 依赖
+node_modules/
+venv/
+__pycache__/
+target/
+vendor/
+dist/
+build/
+
+# 环境变量与密钥
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# 日志与临时文件
+*.log
+*.tmp
+*.temp
+*.cache
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 操作系统
+*.DS_Store
+desktop.ini
+
+# 构建产物
+*.exe
+*.dll
+*.so
+*.min.js
+*.min.css
+# 运行时数据（含敏感用户信息）
+data/
+
+# 本地 MySQL 配置（含本机绝对路径）
+focusmath-my.ini
+
+# TRAE IDE 工作目录
+.trae/
+
+# 管理后台运行时数据
+admin-panel/data/
