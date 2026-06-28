@@ -1,0 +1,15 @@
+{
+  "name": "focusmath-admin-panel",
+  "version": "1.0.0",
+  "private": true,
+  "description": "FocusMath 后端管理可视化界面（独立可运行）",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node admin-server.js",
+    "dev": "node admin-server.js"
+  },
+  "engines": {
+    "node": ">=14"
+  },
+  "dependencies": {}
+}

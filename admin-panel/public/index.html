@@ -1,0 +1,1014 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FocusMath 后端管理</title>
+<style>
+:root {
+  --primary: #1B6B93;
+  --primary-soft: #E8F1F6;
+  --success: #4FCCA3;
+  --success-soft: #E6F9F3;
+  --warning: #F4A261;
+  --warning-soft: #FFF4E8;
+  --danger: #F47068;
+  --danger-soft: #FEEBE9;
+  --info: #6C8EBF;
+  --info-soft: #E8EEF5;
+  --slate: #64748B;
+  --slate-soft: #F1F5F9;
+  --dark: #1E293B;
+  --border: #E2E8F0;
+  --bg: #F8FAFC;
+  --card: #FFFFFF;
+  --text: #1E293B;
+  --muted: #94A3B8;
+  --radius: 10px;
+  --radius-sm: 6px;
+  --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.05);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.6;
+}
+
+/* 登录页 */
+.login-wrap {
+  min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #1B6B93 0%, #4FCCA3 100%);
+}
+.login-card {
+  background: var(--card); padding: 40px 32px; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  width: 360px; max-width: 90vw;
+}
+.login-card h1 { font-size: 24px; font-weight: 700; margin-bottom: 8px; color: var(--primary); }
+.login-card p { color: var(--slate); margin-bottom: 24px; font-size: 13px; }
+.login-card input {
+  width: 100%; padding: 12px 14px; border: 2px solid var(--border); border-radius: var(--radius-sm);
+  font-size: 14px; margin-bottom: 16px; font-family: inherit; transition: border-color .2s;
+}
+.login-card input:focus { outline: none; border-color: var(--primary); }
+.login-card button {
+  width: 100%; padding: 12px; background: var(--primary); color: white; border: none; border-radius: var(--radius-sm);
+  font-size: 15px; font-weight: 600; cursor: pointer; transition: opacity .2s;
+}
+.login-card button:hover { opacity: 0.9; }
+.login-error { color: var(--danger); font-size: 13px; margin-bottom: 12px; min-height: 20px; }
+
+/* 主布局 */
+.app { display: none; min-height: 100vh; }
+.app.active { display: block; }
+.sidebar {
+  position: fixed; left: 0; top: 0; bottom: 0; width: 220px; background: var(--dark); color: #CBD5E1;
+  padding: 20px 0; overflow-y: auto; z-index: 100;
+}
+.sidebar-logo { padding: 0 20px 20px; font-size: 18px; font-weight: 700; color: white; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 12px; }
+.sidebar-nav { list-style: none; }
+.sidebar-nav li { padding: 10px 20px; cursor: pointer; transition: all .15s; display: flex; align-items: center; gap: 10px; font-size: 14px; }
+.sidebar-nav li:hover { background: rgba(255,255,255,0.05); color: white; }
+.sidebar-nav li.active { background: var(--primary); color: white; }
+.sidebar-nav li .icon { width: 18px; height: 18px; flex-shrink: 0; }
+.sidebar-footer { position: absolute; bottom: 20px; left: 20px; right: 20px; font-size: 11px; color: #64748B; }
+
+.main { margin-left: 220px; padding: 24px 32px; min-height: 100vh; }
+.page-header { margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+.page-title { font-size: 22px; font-weight: 700; color: var(--dark); }
+.page-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* 统计卡片 */
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+.stat-card { background: var(--card); padding: 20px; border-radius: var(--radius); box-shadow: var(--shadow); border-left: 4px solid var(--primary); }
+.stat-card.success { border-left-color: var(--success); }
+.stat-card.warning { border-left-color: var(--warning); }
+.stat-card.danger { border-left-color: var(--danger); }
+.stat-card.info { border-left-color: var(--info); }
+.stat-label { font-size: 12px; color: var(--slate); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+.stat-value { font-size: 28px; font-weight: 700; color: var(--dark); }
+.stat-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+/* 表格 */
+.card { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; margin-bottom: 16px; }
+.card-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+.card-title { font-size: 16px; font-weight: 600; color: var(--dark); }
+.card-body { padding: 0; }
+table { width: 100%; border-collapse: collapse; }
+th { background: var(--slate-soft); padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: var(--slate); text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
+td { padding: 12px 16px; border-bottom: 1px solid var(--border); vertical-align: top; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: var(--slate-soft); }
+.cell-id { font-family: "JetBrains Mono", monospace; font-size: 12px; color: var(--slate); }
+.cell-truncate { max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* 表单 */
+.form-group { margin-bottom: 16px; }
+.form-group label { display: block; margin-bottom: 6px; font-size: 13px; font-weight: 600; color: var(--dark); }
+.form-group input, .form-group select, .form-group textarea {
+  width: 100%; padding: 10px 12px; border: 2px solid var(--border); border-radius: var(--radius-sm);
+  font-size: 14px; font-family: inherit; transition: border-color .2s;
+}
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: var(--primary); }
+.form-group textarea { resize: vertical; min-height: 80px; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+/* 按钮 */
+.btn { padding: 8px 16px; border: none; border-radius: var(--radius-sm); font-size: 13px; font-weight: 600; cursor: pointer; transition: all .15s; display: inline-flex; align-items: center; gap: 6px; }
+.btn-primary { background: var(--primary); color: white; }
+.btn-primary:hover { opacity: 0.9; }
+.btn-success { background: var(--success); color: white; }
+.btn-success:hover { opacity: 0.9; }
+.btn-warning { background: var(--warning); color: white; }
+.btn-warning:hover { opacity: 0.9; }
+.btn-danger { background: var(--danger); color: white; }
+.btn-danger:hover { opacity: 0.9; }
+.btn-ghost { background: transparent; color: var(--slate); border: 1px solid var(--border); }
+.btn-ghost:hover { background: var(--slate-soft); }
+.btn-sm { padding: 6px 10px; font-size: 12px; }
+
+/* 徽章 */
+.badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+.badge-success { background: var(--success-soft); color: var(--success); }
+.badge-warning { background: var(--warning-soft); color: var(--warning); }
+.badge-danger { background: var(--danger-soft); color: var(--danger); }
+.badge-info { background: var(--info-soft); color: var(--info); }
+.badge-muted { background: var(--slate-soft); color: var(--slate); }
+
+/* 模态框 */
+.modal { display: none; position: fixed; inset: 0; z-index: 1000; }
+.modal.active { display: block; }
+.modal-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.4); }
+.modal-content { position: relative; background: var(--card); margin: 5vh auto; max-width: 560px; border-radius: var(--radius); box-shadow: var(--shadow-md); max-height: 90vh; overflow-y: auto; }
+.modal-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+.modal-title { font-size: 18px; font-weight: 700; color: var(--dark); }
+.modal-close { background: none; border: none; font-size: 24px; cursor: pointer; color: var(--muted); padding: 0; width: 28px; height: 28px; }
+.modal-body { padding: 20px; }
+.modal-footer { padding: 16px 20px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 8px; }
+
+/* 筛选栏 */
+.filter-bar { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
+.filter-bar input, .filter-bar select { padding: 8px 12px; border: 2px solid var(--border); border-radius: var(--radius-sm); font-size: 13px; font-family: inherit; }
+.filter-bar input:focus, .filter-bar select:focus { outline: none; border-color: var(--primary); }
+.filter-bar input { min-width: 200px; }
+
+/* 空状态 */
+.empty { text-align: center; padding: 48px 20px; color: var(--muted); }
+.empty-title { font-size: 16px; font-weight: 600; margin-bottom: 4px; color: var(--slate); }
+
+/* 分页 */
+.pagination { display: flex; gap: 4px; padding: 12px 20px; justify-content: center; align-items: center; border-top: 1px solid var(--border); }
+.pagination button { padding: 6px 10px; border: 1px solid var(--border); background: white; border-radius: var(--radius-sm); cursor: pointer; font-size: 13px; }
+.pagination button:hover { background: var(--slate-soft); }
+.pagination button.active { background: var(--primary); color: white; border-color: var(--primary); }
+.pagination button:disabled { opacity: 0.4; cursor: not-allowed; }
+.pagination .page-info { padding: 0 12px; font-size: 13px; color: var(--slate); }
+
+/* 通知 */
+.toast { position: fixed; top: 20px; right: 20px; z-index: 2000; padding: 12px 20px; border-radius: var(--radius-sm); box-shadow: var(--shadow-md); font-size: 14px; font-weight: 600; opacity: 0; transform: translateX(100px); transition: all .3s; }
+.toast.show { opacity: 1; transform: translateX(0); }
+.toast-success { background: var(--success); color: white; }
+.toast-error { background: var(--danger); color: white; }
+.toast-info { background: var(--info); color: white; }
+
+/* 代码预览 */
+pre { background: var(--dark); color: #E2E8F0; padding: 12px 16px; border-radius: var(--radius-sm); font-size: 12px; overflow-x: auto; font-family: "JetBrains Mono", monospace; }
+
+/* 标签页 */
+.tabs { display: flex; gap: 0; border-bottom: 2px solid var(--border); margin-bottom: 16px; }
+.tab { padding: 10px 20px; cursor: pointer; font-size: 14px; font-weight: 600; color: var(--slate); border-bottom: 2px solid transparent; margin-bottom: -2px; }
+.tab:hover { color: var(--primary); }
+.tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+/* 响应式 */
+@media (max-width: 768px) {
+  .sidebar { width: 60px; }
+  .sidebar-logo, .sidebar-nav li span, .sidebar-footer { display: none; }
+  .main { margin-left: 60px; padding: 16px; }
+  .form-row { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- 登录页 -->
+<div class="login-wrap" id="loginWrap">
+  <div class="login-card">
+    <h1>FocusMath 后端管理</h1>
+    <p>请输入管理令牌登录。首次启动时令牌会输出到服务器控制台。</p>
+    <div class="login-error" id="loginError"></div>
+    <input type="password" id="loginToken" placeholder="管理令牌" autocomplete="off">
+    <button id="loginBtn">登录</button>
+  </div>
+</div>
+
+<!-- 主应用 -->
+<div class="app" id="app">
+  <!-- 侧边栏 -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">FocusMath 管理</div>
+    <ul class="sidebar-nav">
+      <li class="active" data-page="dashboard"><span>仪表盘</span></li>
+      <li data-page="questions"><span>题库管理</span></li>
+      <li data-page="users"><span>用户信息</span></li>
+      <li data-page="comments"><span>评论管理</span></li>
+      <li data-page="settings"><span>系统设置</span></li>
+    </ul>
+    <div class="sidebar-footer">v1.0.0 · 独立运行</div>
+  </aside>
+
+  <!-- 主内容 -->
+  <main class="main">
+    <!-- 仪表盘 -->
+    <div class="page" id="page-dashboard">
+      <div class="page-header">
+        <h1 class="page-title">仪表盘</h1>
+        <button class="btn btn-ghost" onclick="refreshDashboard()">刷新</button>
+      </div>
+      <div class="stats-grid" id="statsGrid"></div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">系统信息</div></div>
+        <div class="card-body">
+          <table>
+            <tr><td style="width:200px;font-weight:600;">FocusMath 后端连接</td><td id="fmConnected">未配置</td></tr>
+            <tr><td style="font-weight:600;">数据存储方式</td><td>JSON 文件（独立存储）</td></tr>
+            <tr><td style="font-weight:600;">服务器端口</td><td id="serverPort">-</td></tr>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- 题库管理 -->
+    <div class="page" id="page-questions" style="display:none;">
+      <div class="page-header">
+        <h1 class="page-title">题库管理</h1>
+        <div class="page-actions">
+          <button class="btn btn-ghost" onclick="importQuestions()">批量导入</button>
+          <button class="btn btn-primary" onclick="editQuestion()">添加题目</button>
+        </div>
+      </div>
+      <div class="filter-bar">
+        <select id="qSubject" onchange="loadQuestions()">
+          <option value="">全部学科</option>
+          <option value="calculus">高等数学</option>
+          <option value="linear">线性代数</option>
+          <option value="probability">概率统计</option>
+        </select>
+        <input type="text" id="qSearch" placeholder="搜索题干或 ID..." oninput="debounceSearch(loadQuestions)">
+        <button class="btn btn-ghost btn-sm" onclick="loadQuestions()">搜索</button>
+        <span id="qSource" class="badge badge-info" style="margin-left:auto;"></span>
+      </div>
+      <div class="card">
+        <div class="card-body">
+          <div id="questionsTable"></div>
+        </div>
+      </div>
+      <div id="qPagination" class="pagination"></div>
+    </div>
+
+    <!-- 用户信息 -->
+    <div class="page" id="page-users" style="display:none;">
+      <div class="page-header">
+        <h1 class="page-title">用户信息管理</h1>
+        <button class="btn btn-primary" onclick="editUser()">添加用户</button>
+      </div>
+      <div class="filter-bar">
+        <input type="text" id="uSearch" placeholder="搜索用户名或邮箱..." oninput="debounceSearch(loadUsers)">
+        <select id="uStatus" onchange="loadUsers()">
+          <option value="">全部状态</option>
+          <option value="active">活跃</option>
+          <option value="disabled">已禁用</option>
+        </select>
+        <select id="uRole" onchange="loadUsers()">
+          <option value="">全部角色</option>
+          <option value="admin">管理员</option>
+          <option value="student">学生</option>
+          <option value="teacher">教师</option>
+        </select>
+      </div>
+      <div class="card">
+        <div class="card-body">
+          <div id="usersTable"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 评论管理 -->
+    <div class="page" id="page-comments" style="display:none;">
+      <div class="page-header">
+        <h1 class="page-title">评论管理</h1>
+        <div class="page-actions">
+          <button class="btn btn-success" onclick="batchApprove()">批量通过</button>
+          <button class="btn btn-danger" onclick="batchReject()">批量拒绝</button>
+        </div>
+      </div>
+      <div class="filter-bar">
+        <select id="cStatus" onchange="loadComments()">
+          <option value="">全部状态</option>
+          <option value="pending">待审核</option>
+          <option value="approved">已通过</option>
+          <option value="rejected">已拒绝</option>
+        </select>
+        <select id="cType" onchange="loadComments()">
+          <option value="">全部类型</option>
+          <option value="question">题目评论</option>
+          <option value="article">文章评论</option>
+          <option value="resource">资源评论</option>
+        </select>
+        <input type="text" id="cSearch" placeholder="搜索评论内容或用户..." oninput="debounceSearch(loadComments)">
+      </div>
+      <div class="card">
+        <div class="card-body">
+          <div id="commentsTable"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 系统设置 -->
+    <div class="page" id="page-settings" style="display:none;">
+      <div class="page-header">
+        <h1 class="page-title">系统设置</h1>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">FocusMath 后端对接</div></div>
+        <div class="card-body" style="padding:20px;">
+          <div class="form-group">
+            <label>FocusMath API 地址</label>
+            <input type="text" id="fmApi" placeholder="http://localhost:3000">
+            <div style="font-size:12px;color:var(--slate);margin-top:6px;">
+              配置后，题库管理可对接 FocusMath 后端的真实题库数据。留空则使用本地题库存储。
+            </div>
+          </div>
+          <button class="btn btn-primary" onclick="saveSettings()">保存设置</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">管理令牌</div></div>
+        <div class="card-body" style="padding:20px;">
+          <div class="form-group">
+            <label>当前令牌</label>
+            <input type="text" id="adminToken" readonly>
+          </div>
+          <button class="btn btn-ghost" onclick="copyToken()">复制令牌</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">数据管理</div></div>
+        <div class="card-body" style="padding:20px;">
+          <p style="margin-bottom:12px;color:var(--slate);font-size:13px;">所有数据存储在 data/ 目录的 JSON 文件中，可手动备份或迁移。</p>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn btn-ghost" onclick="exportData()">导出全部数据</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- 模态框：题目编辑 -->
+<div class="modal" id="questionModal">
+  <div class="modal-backdrop" onclick="closeModal('questionModal')"></div>
+  <div class="modal-content">
+    <div class="modal-header">
+      <div class="modal-title" id="questionModalTitle">添加题目</div>
+      <button class="modal-close" onclick="closeModal('questionModal')">&times;</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="qId">
+      <div class="form-row">
+        <div class="form-group">
+          <label>学科</label>
+          <select id="qModalSubject">
+            <option value="calculus">高等数学</option>
+            <option value="linear">线性代数</option>
+            <option value="probability">概率统计</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>类型</label>
+          <select id="qModalType" onchange="toggleQuestionType()">
+            <option value="choice">选择题</option>
+            <option value="fill">填空题</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>难度 (1-10)</label>
+        <input type="number" id="qModalDifficulty" min="1" max="10" value="5">
+      </div>
+      <div class="form-group">
+        <label>题干</label>
+        <textarea id="qModalQuestion" placeholder="输入题目内容..."></textarea>
+      </div>
+      <div class="form-group" id="qOptionsGroup">
+        <label>选项（每行一个）</label>
+        <textarea id="qModalOptions" rows="4" placeholder="选项A&#10;选项B&#10;选项C&#10;选项D"></textarea>
+      </div>
+      <div class="form-group" id="qAnswerGroup">
+        <label id="qAnswerLabel">正确答案（选项序号，从 0 开始）</label>
+        <input type="text" id="qModalAnswer" placeholder="0">
+      </div>
+      <div class="form-group">
+        <label>解析</label>
+        <textarea id="qModalExplanation" placeholder="答案解析..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('questionModal')">取消</button>
+      <button class="btn btn-primary" onclick="saveQuestion()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 模态框：用户编辑 -->
+<div class="modal" id="userModal">
+  <div class="modal-backdrop" onclick="closeModal('userModal')"></div>
+  <div class="modal-content">
+    <div class="modal-header">
+      <div class="modal-title" id="userModalTitle">添加用户</div>
+      <button class="modal-close" onclick="closeModal('userModal')">&times;</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="uId">
+      <div class="form-group">
+        <label>用户名</label>
+        <input type="text" id="uModalUsername" placeholder="用户名">
+      </div>
+      <div class="form-group">
+        <label>邮箱</label>
+        <input type="email" id="uModalEmail" placeholder="user@example.com">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>角色</label>
+          <select id="uModalRole">
+            <option value="student">学生</option>
+            <option value="teacher">教师</option>
+            <option value="admin">管理员</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>状态</label>
+          <select id="uModalStatus">
+            <option value="active">活跃</option>
+            <option value="disabled">已禁用</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>备注</label>
+        <textarea id="uModalNotes" placeholder="用户备注信息..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('userModal')">取消</button>
+      <button class="btn btn-primary" onclick="saveUser()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 模态框：评论编辑 -->
+<div class="modal" id="commentModal">
+  <div class="modal-backdrop" onclick="closeModal('commentModal')"></div>
+  <div class="modal-content">
+    <div class="modal-header">
+      <div class="modal-title">评论详情</div>
+      <button class="modal-close" onclick="closeModal('commentModal')">&times;</button>
+    </div>
+    <div class="modal-body" id="commentModalBody"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('commentModal')">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- 导入模态框 -->
+<div class="modal" id="importModal">
+  <div class="modal-backdrop" onclick="closeModal('importModal')"></div>
+  <div class="modal-content">
+    <div class="modal-header">
+      <div class="modal-title">批量导入题目</div>
+      <button class="modal-close" onclick="closeModal('importModal')">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>JSON 格式题目数据</label>
+        <textarea id="importData" rows="10" placeholder='[{"subject":"calculus","type":"choice","question":"...","options":["A","B","C","D"],"answer":0,"difficulty":5,"explanation":"..."}]'></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('importModal')">取消</button>
+      <button class="btn btn-primary" onclick="doImport()">导入</button>
+    </div>
+  </div>
+</div>
+
+<!-- 通知 -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ==================== 全局状态 ====================
+let adminToken = localStorage.getItem('adminToken') || '';
+let currentPage = 'dashboard';
+let questionsData = [];
+let usersData = [];
+let qPage = 1, qPageSize = 20, qTotal = 0;
+let searchTimer = null;
+
+const $ = (id) => document.getElementById(id);
+const api = async (url, opts = {}) => {
+  const res = await fetch(url, {
+    ...opts,
+    headers: { 'Content-Type': 'application/json', ...(adminToken ? { 'Authorization': 'Bearer ' + adminToken } : {}), ...(opts.headers || {}) }
+  });
+  if (res.status === 401) { logout(); throw new Error('未授权'); }
+  return res.json();
+};
+
+function showToast(msg, type = 'info') {
+  const t = $('toast');
+  t.className = 'toast toast-' + type + ' show';
+  t.textContent = msg;
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+function escapeHtml(s) {
+  return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+function debounceSearch(fn) {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => fn(), 300);
+}
+
+function openModal(id) { $(id).classList.add('active'); }
+function closeModal(id) { $(id).classList.remove('active'); }
+
+// ==================== 登录 ====================
+async function login() {
+  const token = $('loginToken').value.trim();
+  if (!token) { $('loginError').textContent = '请输入令牌'; return; }
+  try {
+    const res = await api('/api/admin/login', { method: 'POST', body: JSON.stringify({ token }) });
+    if (res.ok) {
+      adminToken = res.token;
+      localStorage.setItem('adminToken', adminToken);
+      enterApp();
+    } else {
+      $('loginError').textContent = res.error || '登录失败';
+    }
+  } catch (e) { $('loginError').textContent = '网络错误：' + e.message; }
+}
+
+function logout() {
+  adminToken = '';
+  localStorage.removeItem('adminToken');
+  $('loginWrap').style.display = 'flex';
+  $('app').classList.remove('active');
+}
+
+function enterApp() {
+  $('loginWrap').style.display = 'none';
+  $('app').classList.add('active');
+  switchPage('dashboard');
+}
+
+// ==================== 页面切换 ====================
+function switchPage(page) {
+  currentPage = page;
+  document.querySelectorAll('.sidebar-nav li').forEach(li => li.classList.toggle('active', li.dataset.page === page));
+  document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
+  $('page-' + page).style.display = 'block';
+  if (page === 'dashboard') refreshDashboard();
+  else if (page === 'questions') loadQuestions();
+  else if (page === 'users') loadUsers();
+  else if (page === 'comments') loadComments();
+  else if (page === 'settings') loadSettings();
+}
+
+// ==================== 仪表盘 ====================
+async function refreshDashboard() {
+  try {
+    const res = await api('/api/dashboard');
+    if (!res.ok) return;
+    const s = res.stats;
+    $('statsGrid').innerHTML = `
+      <div class="stat-card"><div class="stat-label">用户总数</div><div class="stat-value">${s.users.total}</div><div class="stat-sub">活跃 ${s.users.active} · 禁用 ${s.users.disabled}</div></div>
+      <div class="stat-card success"><div class="stat-label">题目总数</div><div class="stat-value">${s.questions.total}</div><div class="stat-sub">高数 ${s.questions.calculus} · 线代 ${s.questions.linear} · 概率 ${s.questions.probability}</div></div>
+      <div class="stat-card warning"><div class="stat-label">待审核评论</div><div class="stat-value">${s.comments.pending}</div><div class="stat-sub">总计 ${s.comments.total} · 通过 ${s.comments.approved}</div></div>
+      <div class="stat-card info"><div class="stat-label">后端状态</div><div class="stat-value">${s.focusmathConnected ? '已连接' : '独立'}</div><div class="stat-sub">${s.focusmathConnected ? 'FocusMath API 已对接' : '使用本地存储'}</div></div>
+    `;
+    $('fmConnected').innerHTML = s.focusmathConnected ? '<span class="badge badge-success">已连接</span>' : '<span class="badge badge-muted">未配置</span>';
+  } catch (e) { showToast('加载失败：' + e.message, 'error'); }
+}
+
+// ==================== 题库管理 ====================
+async function loadQuestions() {
+  const subject = $('qSubject').value;
+  const search = $('qSearch').value.trim();
+  try {
+    const params = new URLSearchParams();
+    if (subject) params.set('subject', subject);
+    if (search) params.set('search', search);
+    const res = await api('/api/questions?' + params.toString());
+    if (!res.ok) { showToast('加载失败', 'error'); return; }
+    questionsData = res.questions || [];
+    qTotal = res.total || questionsData.length;
+    $('qSource').textContent = res.source === 'focusmath' ? '来自 FocusMath 后端' : '本地题库';
+    renderQuestionsTable();
+  } catch (e) { showToast('加载失败：' + e.message, 'error'); }
+}
+
+function renderQuestionsTable() {
+  if (!questionsData.length) {
+    $('questionsTable').innerHTML = '<div class="empty"><div class="empty-title">暂无题目</div><div>点击右上角"添加题目"创建</div></div>';
+    $('qPagination').innerHTML = '';
+    return;
+  }
+  const start = (qPage - 1) * qPageSize;
+  const pageData = questionsData.slice(start, start + qPageSize);
+  const subjectMap = { calculus: '高等数学', linear: '线性代数', probability: '概率统计' };
+  const typeMap = { choice: '选择题', fill: '填空题' };
+  $('questionsTable').innerHTML = `<table>
+    <thead><tr><th>ID</th><th>学科</th><th>类型</th><th>题干</th><th>难度</th><th>操作</th></tr></thead>
+    <tbody>
+    ${pageData.map(q => `<tr>
+      <td class="cell-id">${escapeHtml(q.id)}</td>
+      <td><span class="badge badge-info">${subjectMap[q.subject] || q.subject}</span></td>
+      <td><span class="badge badge-muted">${typeMap[q.type] || q.type}</span></td>
+      <td class="cell-truncate" title="${escapeHtml(q.question)}">${escapeHtml(q.question)}</td>
+      <td>${q.difficulty || '-'}</td>
+      <td style="white-space:nowrap;">
+        <button class="btn btn-ghost btn-sm" onclick="editQuestion('${escapeHtml(q.id)}')">编辑</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteQuestion('${escapeHtml(q.id)}')">删除</button>
+      </td>
+    </tr>`).join('')}
+    </tbody>
+  </table>`;
+  renderPagination('qPagination', qPage, Math.ceil(questionsData.length / qPageSize), (p) => { qPage = p; renderQuestionsTable(); });
+}
+
+function renderPagination(elId, cur, totalPages, onChange) {
+  if (totalPages <= 1) { $(elId).innerHTML = ''; return; }
+  let html = '';
+  html += `<button ${cur <= 1 ? 'disabled' : ''} onclick="void(0)" data-p="${cur-1}">上一页</button>`;
+  for (let i = 1; i <= totalPages; i++) {
+    if (i === 1 || i === totalPages || (i >= cur - 2 && i <= cur + 2)) {
+      html += `<button class="${i === cur ? 'active' : ''}" data-p="${i}">${i}</button>`;
+    } else if (i === cur - 3 || i === cur + 3) {
+      html += '<span style="padding:0 4px;">...</span>';
+    }
+  }
+  html += `<button ${cur >= totalPages ? 'disabled' : ''} data-p="${cur+1}">下一页</button>`;
+  html += `<span class="page-info">第 ${cur} / ${totalPages} 页</span>`;
+  $(elId).innerHTML = html;
+  $(elId).querySelectorAll('button[data-p]').forEach(btn => {
+    btn.onclick = () => { const p = parseInt(btn.dataset.p); if (p >= 1 && p <= totalPages) onChange(p); };
+  });
+}
+
+function editQuestion(id) {
+  let q = { subject: 'calculus', type: 'choice', difficulty: 5, question: '', options: [], answer: '', explanation: '' };
+  if (id) {
+    q = questionsData.find(x => x.id === id) || q;
+    $('questionModalTitle').textContent = '编辑题目';
+  } else {
+    $('questionModalTitle').textContent = '添加题目';
+  }
+  $('qId').value = q.id || '';
+  $('qModalSubject').value = q.subject || 'calculus';
+  $('qModalType').value = q.type || 'choice';
+  $('qModalDifficulty').value = q.difficulty || 5;
+  $('qModalQuestion').value = q.question || '';
+  $('qModalOptions').value = (q.options || []).join('\n');
+  $('qModalAnswer').value = q.answer !== undefined ? q.answer : '';
+  $('qModalExplanation').value = q.explanation || '';
+  toggleQuestionType();
+  openModal('questionModal');
+}
+
+function toggleQuestionType() {
+  const type = $('qModalType').value;
+  if (type === 'fill') {
+    $('qOptionsGroup').style.display = 'none';
+    $('qAnswerLabel').textContent = '正确答案';
+  } else {
+    $('qOptionsGroup').style.display = 'block';
+    $('qAnswerLabel').textContent = '正确答案（选项序号，从 0 开始）';
+  }
+}
+
+async function saveQuestion() {
+  const id = $('qId').value;
+  const type = $('qModalType').value;
+  const data = {
+    subject: $('qModalSubject').value,
+    type: type,
+    difficulty: parseInt($('qModalDifficulty').value) || 5,
+    question: $('qModalQuestion').value.trim(),
+    options: type === 'choice' ? $('qModalOptions').value.split('\n').map(s => s.trim()).filter(Boolean) : [],
+    answer: type === 'choice' ? parseInt($('qModalAnswer').value) : $('qModalAnswer').value.trim(),
+    explanation: $('qModalExplanation').value.trim()
+  };
+  if (!data.question) { showToast('题干不能为空', 'error'); return; }
+  if (type === 'choice' && data.options.length < 2) { showToast('选择题至少需要 2 个选项', 'error'); return; }
+  try {
+    const res = await api(id ? '/api/questions/' + encodeURIComponent(id) : '/api/questions', {
+      method: id ? 'PUT' : 'POST',
+      body: JSON.stringify(data)
+    });
+    if (res.ok) { showToast(id ? '已更新' : '已添加', 'success'); closeModal('questionModal'); loadQuestions(); }
+    else { showToast(res.error || '保存失败', 'error'); }
+  } catch (e) { showToast('保存失败：' + e.message, 'error'); }
+}
+
+async function deleteQuestion(id) {
+  if (!confirm('确认删除此题目？')) return;
+  try {
+    const res = await api('/api/questions/' + encodeURIComponent(id), { method: 'DELETE' });
+    if (res.ok) { showToast('已删除', 'success'); loadQuestions(); }
+    else { showToast(res.error || '删除失败', 'error'); }
+  } catch (e) { showToast('删除失败：' + e.message, 'error'); }
+}
+
+function importQuestions() { $('importData').value = ''; openModal('importModal'); }
+
+async function doImport() {
+  const raw = $('importData').value.trim();
+  if (!raw) { showToast('请输入 JSON 数据', 'error'); return; }
+  let questions;
+  try { questions = JSON.parse(raw); } catch (e) { showToast('JSON 格式错误', 'error'); return; }
+  if (!Array.isArray(questions)) { showToast('数据必须是数组', 'error'); return; }
+  try {
+    const res = await api('/api/questions/import', { method: 'POST', body: JSON.stringify({ questions }) });
+    if (res.ok) { showToast(`已导入 ${res.imported} 题`, 'success'); closeModal('importModal'); loadQuestions(); }
+    else { showToast(res.error || '导入失败', 'error'); }
+  } catch (e) { showToast('导入失败：' + e.message, 'error'); }
+}
+
+// ==================== 用户管理 ====================
+async function loadUsers() {
+  const search = $('uSearch').value.trim();
+  const status = $('uStatus').value;
+  const role = $('uRole').value;
+  try {
+    const params = new URLSearchParams();
+    if (search) params.set('search', search);
+    if (status) params.set('status', status);
+    if (role) params.set('role', role);
+    const res = await api('/api/users?' + params.toString());
+    if (!res.ok) { showToast('加载失败', 'error'); return; }
+    usersData = res.users || [];
+    renderUsersTable(usersData);
+  } catch (e) { showToast('加载失败：' + e.message, 'error'); }
+}
+
+function renderUsersTable(users) {
+  if (!users.length) {
+    $('usersTable').innerHTML = '<div class="empty"><div class="empty-title">暂无用户</div><div>点击右上角"添加用户"创建</div></div>';
+    return;
+  }
+  const roleMap = { admin: '管理员', teacher: '教师', student: '学生' };
+  const statusMap = { active: ['活跃', 'success'], disabled: ['已禁用', 'danger'] };
+  $('usersTable').innerHTML = `<table>
+    <thead><tr><th>ID</th><th>用户名</th><th>邮箱</th><th>角色</th><th>状态</th><th>创建时间</th><th>操作</th></tr></thead>
+    <tbody>
+    ${users.map(u => {
+      const st = statusMap[u.status] || [u.status, 'muted'];
+      return `<tr>
+        <td class="cell-id">${escapeHtml(u.id).slice(0,8)}...</td>
+        <td><strong>${escapeHtml(u.username)}</strong></td>
+        <td>${escapeHtml(u.email || '-')}</td>
+        <td><span class="badge badge-info">${roleMap[u.role] || u.role}</span></td>
+        <td><span class="badge badge-${st[1]}">${st[0]}</span></td>
+        <td>${escapeHtml((u.createdAt || '').slice(0, 10))}</td>
+        <td style="white-space:nowrap;">
+          <button class="btn btn-ghost btn-sm" onclick="editUser('${escapeHtml(u.id)}')">编辑</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteUser('${escapeHtml(u.id)}')">删除</button>
+        </td>
+      </tr>`;
+    }).join('')}
+    </tbody>
+  </table>`;
+}
+
+function editUser(id) {
+  let u = { username: '', email: '', role: 'student', status: 'active', notes: '' };
+  if (id) {
+    u = usersData.find(x => x.id === id) || u;
+    $('userModalTitle').textContent = '编辑用户';
+  } else {
+    $('userModalTitle').textContent = '添加用户';
+  }
+  $('uId').value = id || '';
+  $('uModalUsername').value = u.username || '';
+  $('uModalEmail').value = u.email || '';
+  $('uModalRole').value = u.role || 'student';
+  $('uModalStatus').value = u.status || 'active';
+  $('uModalNotes').value = u.notes || '';
+  openModal('userModal');
+}
+
+async function saveUser() {
+  const id = $('uId').value;
+  const data = {
+    username: $('uModalUsername').value.trim(),
+    email: $('uModalEmail').value.trim(),
+    role: $('uModalRole').value,
+    status: $('uModalStatus').value,
+    notes: $('uModalNotes').value.trim()
+  };
+  if (!data.username) { showToast('用户名不能为空', 'error'); return; }
+  try {
+    const res = await api(id ? '/api/users/' + encodeURIComponent(id) : '/api/users', {
+      method: id ? 'PUT' : 'POST',
+      body: JSON.stringify(data)
+    });
+    if (res.ok) { showToast(id ? '已更新' : '已添加', 'success'); closeModal('userModal'); loadUsers(); }
+    else { showToast(res.error || '保存失败', 'error'); }
+  } catch (e) { showToast('保存失败：' + e.message, 'error'); }
+}
+
+async function deleteUser(id) {
+  if (!confirm('确认删除此用户？')) return;
+  try {
+    const res = await api('/api/users/' + encodeURIComponent(id), { method: 'DELETE' });
+    if (res.ok) { showToast('已删除', 'success'); loadUsers(); }
+    else { showToast(res.error || '删除失败', 'error'); }
+  } catch (e) { showToast('删除失败：' + e.message, 'error'); }
+}
+
+// ==================== 评论管理 ====================
+async function loadComments() {
+  const status = $('cStatus').value;
+  const type = $('cType').value;
+  const search = $('cSearch').value.trim();
+  try {
+    const params = new URLSearchParams();
+    if (status) params.set('status', status);
+    if (type) params.set('targetType', type);
+    if (search) params.set('search', search);
+    const res = await api('/api/comments?' + params.toString());
+    if (!res.ok) { showToast('加载失败', 'error'); return; }
+    renderCommentsTable(res.comments || []);
+  } catch (e) { showToast('加载失败：' + e.message, 'error'); }
+}
+
+function renderCommentsTable(comments) {
+  if (!comments.length) {
+    $('commentsTable').innerHTML = '<div class="empty"><div class="empty-title">暂无评论</div><div>用户评论后将在此显示</div></div>';
+    return;
+  }
+  const statusMap = { pending: ['待审核', 'warning'], approved: ['已通过', 'success'], rejected: ['已拒绝', 'danger'] };
+  const typeMap = { question: '题目', article: '文章', resource: '资源' };
+  $('commentsTable').innerHTML = `<table>
+    <thead><tr><th style="width:30px;"><input type="checkbox" id="cSelectAll" onchange="toggleSelectAll(this)"></th><th>用户</th><th>类型</th><th>内容</th><th>状态</th><th>时间</th><th>操作</th></tr></thead>
+    <tbody>
+    ${comments.map(c => {
+      const st = statusMap[c.status] || [c.status, 'muted'];
+      return `<tr>
+        <td><input type="checkbox" class="c-check" value="${escapeHtml(c.id)}"></td>
+        <td>${escapeHtml(c.userName)}</td>
+        <td><span class="badge badge-muted">${typeMap[c.targetType] || c.targetType}</span></td>
+        <td class="cell-truncate" title="${escapeHtml(c.content)}">${escapeHtml(c.content)}</td>
+        <td><span class="badge badge-${st[1]}">${st[0]}</span></td>
+        <td>${escapeHtml((c.createdAt || '').slice(0, 16).replace('T', ' '))}</td>
+        <td style="white-space:nowrap;">
+          <button class="btn btn-success btn-sm" onclick="approveComment('${escapeHtml(c.id)}')">通过</button>
+          <button class="btn btn-danger btn-sm" onclick="rejectComment('${escapeHtml(c.id)}')">拒绝</button>
+          <button class="btn btn-ghost btn-sm" onclick="viewComment('${escapeHtml(c.id)}')">详情</button>
+        </td>
+      </tr>`;
+    }).join('')}
+    </tbody>
+  </table>`;
+}
+
+function toggleSelectAll(el) {
+  document.querySelectorAll('.c-check').forEach(c => c.checked = el.checked);
+}
+
+function getSelectedComments() {
+  return Array.from(document.querySelectorAll('.c-check:checked')).map(c => c.value);
+}
+
+async function approveComment(id) {
+  try {
+    const res = await api('/api/comments/' + encodeURIComponent(id), { method: 'PUT', body: JSON.stringify({ status: 'approved' }) });
+    if (res.ok) { showToast('已通过', 'success'); loadComments(); }
+  } catch (e) { showToast('操作失败', 'error'); }
+}
+
+async function rejectComment(id) {
+  try {
+    const res = await api('/api/comments/' + encodeURIComponent(id), { method: 'PUT', body: JSON.stringify({ status: 'rejected' }) });
+    if (res.ok) { showToast('已拒绝', 'success'); loadComments(); }
+  } catch (e) { showToast('操作失败', 'error'); }
+}
+
+async function batchApprove() {
+  const ids = getSelectedComments();
+  if (!ids.length) { showToast('请先选择评论', 'error'); return; }
+  try {
+    const res = await api('/api/comments/batch', { method: 'POST', body: JSON.stringify({ ids, status: 'approved' }) });
+    if (res.ok) { showToast(`已通过 ${res.updated} 条`, 'success'); loadComments(); }
+  } catch (e) { showToast('操作失败', 'error'); }
+}
+
+async function batchReject() {
+  const ids = getSelectedComments();
+  if (!ids.length) { showToast('请先选择评论', 'error'); return; }
+  try {
+    const res = await api('/api/comments/batch', { method: 'POST', body: JSON.stringify({ ids, status: 'rejected' }) });
+    if (res.ok) { showToast(`已拒绝 ${res.updated} 条`, 'success'); loadComments(); }
+  } catch (e) { showToast('操作失败', 'error'); }
+}
+
+async function viewComment(id) {
+  const params = new URLSearchParams();
+  params.set('search', '');
+  const res = await api('/api/comments?' + params.toString());
+  const c = (res.comments || []).find(x => x.id === id);
+  if (!c) return;
+  $('commentModalBody').innerHTML = `
+    <div class="form-group"><label>用户</label><div>${escapeHtml(c.userName)} <span class="badge badge-muted">${escapeHtml(c.userId)}</span></div></div>
+    <div class="form-group"><label>目标类型</label><div>${escapeHtml(c.targetType)}</div></div>
+    <div class="form-group"><label>目标 ID</label><div class="cell-id">${escapeHtml(c.targetId)}</div></div>
+    <div class="form-group"><label>评论内容</label><div style="background:var(--slate-soft);padding:12px;border-radius:6px;">${escapeHtml(c.content)}</div></div>
+    <div class="form-group"><label>状态</label><div>${escapeHtml(c.status)}</div></div>
+    <div class="form-group"><label>创建时间</label><div>${escapeHtml(c.createdAt)}</div></div>
+    ${c.reply ? `<div class="form-group"><label>管理员回复</label><div style="background:var(--info-soft);padding:12px;border-radius:6px;">${escapeHtml(c.reply)}</div></div>` : ''}
+    <div class="form-group">
+      <label>回复评论（可选）</label>
+      <textarea id="cReplyText" placeholder="输入回复内容...">${escapeHtml(c.reply || '')}</textarea>
+    </div>
+  `;
+  // 添加回复按钮
+  const footer = document.querySelector('#commentModal .modal-footer');
+  footer.innerHTML = `
+    <button class="btn btn-ghost" onclick="closeModal('commentModal')">关闭</button>
+    <button class="btn btn-primary" onclick="replyToComment('${escapeHtml(c.id)}')">保存回复</button>
+  `;
+  openModal('commentModal');
+}
+
+async function replyToComment(id) {
+  const reply = $('cReplyText').value.trim();
+  try {
+    const res = await api('/api/comments/' + encodeURIComponent(id), { method: 'PUT', body: JSON.stringify({ reply }) });
+    if (res.ok) { showToast('回复已保存', 'success'); closeModal('commentModal'); loadComments(); }
+  } catch (e) { showToast('保存失败', 'error'); }
+}
+
+// ==================== 设置 ====================
+async function loadSettings() {
+  try {
+    const res = await api('/api/settings');
+    if (res.ok) { $('fmApi').value = res.focusmathApi || ''; }
+  } catch (e) {}
+  // 显示当前令牌
+  $('adminToken').value = adminToken;
+}
+
+async function saveSettings() {
+  const fmApi = $('fmApi').value.trim();
+  try {
+    const res = await api('/api/settings', { method: 'PUT', body: JSON.stringify({ focusmathApi: fmApi }) });
+    if (res.ok) { showToast('设置已保存', 'success'); refreshDashboard(); }
+  } catch (e) { showToast('保存失败', 'error'); }
+}
+
+function copyToken() {
+  $('adminToken').select();
+  document.execCommand('copy');
+  showToast('令牌已复制', 'success');
+}
+
+async function exportData() {
+  try {
+    const [users, comments, questions] = await Promise.all([
+      api('/api/users'), api('/api/comments'), api('/api/questions')
+    ]);
+    const data = { users: users.users || [], comments: comments.comments || [], questions: questions.questions || [], exportAt: new Date().toISOString() };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `focusmath-admin-${new Date().toISOString().slice(0,10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('已导出', 'success');
+  } catch (e) { showToast('导出失败', 'error'); }
+}
+
+// ==================== 初始化 ====================
+$('loginBtn').onclick = login;
+$('loginToken').addEventListener('keypress', (e) => { if (e.key === 'Enter') login(); });
+document.querySelectorAll('.sidebar-nav li').forEach(li => {
+  li.onclick = () => switchPage(li.dataset.page);
+});
+
+// 自动登录
+if (adminToken) enterApp();
+</script>
+</body>
+</html>
